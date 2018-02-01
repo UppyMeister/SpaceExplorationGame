@@ -2,27 +2,31 @@
 
 public static class MeshGenerator
 {
-    public static MeshData GenerateTerrainMesh(Terrain terrain, BiomeHelper biomeHelper, float heightMultiplier)
+    public static MeshData GenerateTerrainMesh(Terrain terrain, BiomeHelper biomeHelper, float heightMultiplier, AnimationCurve meshHeightCurve, int levelOfDetail)
     {
+        AnimationCurve heightCurve = new AnimationCurve(meshHeightCurve.keys);
         int size = terrain.heightMap.GetLength(0);
         float topLeftX = (size - 1) / -2f;
         float topLeftZ = (size - 1) / 2f;
 
-        MeshData meshData = new MeshData(size);
+        int meshSimplificationIncrement = levelOfDetail == 0 ? 1 : levelOfDetail * 2;
+        int verticesPerLine = (size - 1) / meshSimplificationIncrement + 1;
+
+        MeshData meshData = new MeshData(verticesPerLine);
         int vertexIndex = 0;
 
-        for (int y = 0; y < size; y++)
+        for (int y = 0; y < size; y += meshSimplificationIncrement)
         {
-            for (int x = 0; x < size; x++)
+            for (int x = 0; x < size; x += meshSimplificationIncrement)
             {
                 Biome biome = biomeHelper.GetBiome(terrain.biomeMap[x, y]);
-                meshData.vertices[vertexIndex] = new Vector3(topLeftX + x, terrain.heightMap[x, y] * heightMultiplier * (biome != null ? biome.heightMultiplier : 1), topLeftZ - y);
+                meshData.vertices[vertexIndex] = new Vector3(topLeftX + x, heightCurve.Evaluate(terrain.heightMap[x, y]) * heightMultiplier * (biome != null ? biome.heightMultiplier : 1), topLeftZ - y);
                 meshData.uvs[vertexIndex] = new Vector2(x / (float)size, y / (float)size);
 
                 if (x < size - 1 && y < size - 1)
                 {
-                    meshData.AddTriangle(vertexIndex, vertexIndex + size + 1, vertexIndex + size);
-                    meshData.AddTriangle(vertexIndex + size + 1, vertexIndex, vertexIndex + 1);
+                    meshData.AddTriangle(vertexIndex, vertexIndex + verticesPerLine + 1, vertexIndex + verticesPerLine);
+                    meshData.AddTriangle(vertexIndex + verticesPerLine + 1, vertexIndex, vertexIndex + 1);
                 }
 
                 vertexIndex++;
@@ -72,7 +76,7 @@ public class MeshData
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
-        mesh.colors = this.meshColours;
+        //mesh.colors = this.meshColours;
         mesh.RecalculateNormals();
 
         return mesh;

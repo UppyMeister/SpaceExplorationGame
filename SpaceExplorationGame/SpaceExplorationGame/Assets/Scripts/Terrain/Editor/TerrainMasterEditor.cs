@@ -11,7 +11,7 @@ public class TerrainMasterEditor : Editor
         DrawDefaultInspector();
 
         if (GUILayout.Button("Generate")) {
-            terrainMaster.GenerateTerrain();
+            terrainMaster.DrawMapInEditor();
         }
     }
 }

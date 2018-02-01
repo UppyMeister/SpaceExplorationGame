@@ -2,25 +2,58 @@
 
 public class PerlinNoise
 {
+    public enum NormaliseMode { Local, Global }
     private int seed;
     private int octaves = 3;
     private float amplitude = 60f;
     private float roughness = 0.3f;
+    private Vector2 offset;
+    private Vector2[] octaveOffsets;
+    private NormaliseMode normaliseMode;
+    private float maxPossibleHeight = 0;
 
-    public PerlinNoise(int seed, int octaves, float amplitude, float roughness)
+    public PerlinNoise(int seed, int octaves, float amplitude, float roughness, Vector2 offset, NormaliseMode normaliseMode)
     {
         this.seed = seed;
         this.octaves = octaves;
         this.amplitude = amplitude;
         this.roughness = roughness;
+        this.offset = offset;
+        this.normaliseMode = normaliseMode;
+
+        System.Random prng = new System.Random(this.seed);
+        this.octaveOffsets = new Vector2[this.octaves];
+        for (int i = 0; i < octaves; i++)
+        {
+            float offsetX = prng.Next(-100000, 100000) + this.offset.x;
+            float offsetY = prng.Next(-100000, 100000) + this.offset.y;
+
+            this.octaveOffsets[i] = new Vector2(offsetX, offsetY);
+
+            maxPossibleHeight += (float)Mathf.Pow(this.roughness, i) * this.amplitude;
+        }
     }
 
-    public PerlinNoise(int octaves, float amplitude, float roughness)
+    public PerlinNoise(int octaves, float amplitude, float roughness, Vector2 offset, NormaliseMode normaliseMode)
     {
         this.seed = new System.Random().Next(1000000000);
         this.octaves = octaves;
         this.amplitude = amplitude;
         this.roughness = roughness;
+        this.offset = offset;
+        this.normaliseMode = normaliseMode;
+
+        System.Random prng = new System.Random(this.seed);
+        this.octaveOffsets = new Vector2[this.octaves];
+        for (int i = 0; i < octaves; i++)
+        {
+            float offsetX = prng.Next(-100000, 100000) + this.offset.x;
+            float offsetY = prng.Next(-100000, 100000) - this.offset.y;
+
+            this.octaveOffsets[i] = new Vector2(offsetX, offsetY);
+
+            maxPossibleHeight += (float)Mathf.Pow(this.roughness, i) * this.amplitude;
+        }
     }
 
     public int GetSeed() { return this.seed; }
@@ -30,8 +63,8 @@ public class PerlinNoise
     {
         float[,] noiseMap = new float[mapSize, mapSize];
 
-        float minNoiseHeight = float.MaxValue;
-        float maxNoiseHeight = float.MinValue;
+        float minLocalNoiseHeight = float.MaxValue;
+        float maxLocalNoiseHeight = float.MinValue;
 
         for (int y = 0; y < mapSize; y++)
         {
@@ -39,8 +72,8 @@ public class PerlinNoise
             {
                 float perlinVal = GetPerlinNoise(x, y);
 
-                if (perlinVal > maxNoiseHeight) maxNoiseHeight = perlinVal;
-                else if (perlinVal < minNoiseHeight) minNoiseHeight = perlinVal;
+                if (perlinVal > maxLocalNoiseHeight) maxLocalNoiseHeight = perlinVal;
+                else if (perlinVal < minLocalNoiseHeight) minLocalNoiseHeight = perlinVal;
 
                 noiseMap[x, y] = perlinVal;
             }
@@ -50,7 +83,14 @@ public class PerlinNoise
         {
             for (int x = 0; x < mapSize; x++)
             {
-                noiseMap[x, y] = Mathf.InverseLerp(minNoiseHeight, maxNoiseHeight, noiseMap[x, y]);
+                if (this.normaliseMode == NormaliseMode.Local)
+                {
+                    noiseMap[x, y] = Mathf.InverseLerp(minLocalNoiseHeight, maxLocalNoiseHeight, noiseMap[x, y]);
+                } else if (this.normaliseMode == NormaliseMode.Global)
+                {
+                    float normalisedHeight = (noiseMap[x, y] + 1) / (maxPossibleHeight);
+                    noiseMap[x, y] = normalisedHeight;
+                }
             }
         }
 
@@ -66,7 +106,9 @@ public class PerlinNoise
         {
             float freq = (float)(Mathf.Pow(2, i) / d);
             float amp = (float)Mathf.Pow(this.roughness, i) * this.amplitude;
-            total += GetInterpolatedNoise(x * freq, y * freq) * amp;
+            float sampleX = (x + this.octaveOffsets[i].x) * freq;
+            float sampleY = (y + this.octaveOffsets[i].y) * freq;
+            total += GetInterpolatedNoise(sampleX, sampleY) * amp;
         }
         
         return total;

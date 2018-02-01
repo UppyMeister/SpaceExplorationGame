@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
+[Obsolete("Use 'PerlinNoise' for generating noise")]
 public static class Noise
 {
     public static float[,] GenerateMap(int mapSize, int seed, float scale, int octaves, float persistance, float lacunarity, Vector2 offset)

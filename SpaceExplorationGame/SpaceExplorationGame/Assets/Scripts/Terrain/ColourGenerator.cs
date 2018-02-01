@@ -26,17 +26,17 @@ public class ColourGenerator
     private List<Color> GetNeighbourColours(int x, int y, float[,] heightMap, float[,] biomeMap)
     {
         List<Color> colours = new List<Color>();
-
+        
         for (int dy = -1; dy <= 1; dy++)
         {
             for (int dx = -1; dx <= 1; dx++)
             {
-                if ((dx >= 0 && dx < heightMap.GetLength(0)) && (dy >= 0 && dy < heightMap.GetLength(1)))
+                if ((x + dx >= 0 && x + dx < heightMap.GetLength(0)) && (y + dy >= 0 && y + dy < heightMap.GetLength(1)))
                 {
-                    Biome biome = biomeHelper.GetBiome(biomeMap[dx, dy]);
+                    Biome biome = biomeHelper.GetBiome(biomeMap[x + dx, y + dy]);
                     if (biome != null)
                     {
-                        TerrainType terrainType = biomeHelper.GetTerrainType(biome, heightMap[dx, dy]);
+                        TerrainType terrainType = biomeHelper.GetTerrainType(biome, heightMap[x + dx, y + dy]);
                         if (terrainType != null)
                         {
                             colours.Add(terrainType.colour);
@@ -70,7 +70,7 @@ public class ColourGenerator
 
         t /= colours.Count;
         t.a = 1;
-        //Debug.Log(string.Format("R: {0}, G: {1}, B: {2}", t.r, t.g, t.b));
+
         return t;
     }
 }
