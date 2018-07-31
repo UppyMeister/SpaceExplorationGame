@@ -124,9 +124,11 @@ public class PerlinNoise
 
     private float GetNoise(int x, int y)
     {
-        long n = x + (y * 57);
-        n = (long)((n << 13) ^ n);
-        return (float)(1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0);
+        //long n = x + (y * 57);
+        //n = (long)((n << 13) ^ n);
+        //return (float)(1.0 - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824.0);
+        //return Mathf.PerlinNoise(x, y);
+        return (float)(new System.Random(x * 49632 + y * 325176 + this.seed).Next() * 2f - 1f);
     }
 
     private float GetInterpolatedNoise(float x, float y)
